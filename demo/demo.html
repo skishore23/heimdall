@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heimdall Policy Control Plane Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div class="max-w-6xl mx-auto py-10 px-4 space-y-6">
+    <header class="space-y-4">
+      <div class="flex flex-col gap-2">
+        <span class="text-sm text-indigo-300 uppercase tracking-[0.3em]">Heimdall demo</span>
+        <h1 class="text-3xl font-semibold">Deterministic policy control plane for agents</h1>
+        <p class="text-slate-300">
+          Explore how Bifröst enforces signed policies, how the SDK protects tool calls,
+          and how Mímir surfaces evidence for every guard decision instead of guessing why the model was blocked.
+        </p>
+      </div>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+      <!-- left column: scenarios -->
+      <section class="space-y-5">
+        <div class="grid gap-5 md:grid-cols-2">
+          <!-- Gateway status card -->
+          <article class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <p class="text-xs tracking-[0.4em] uppercase text-slate-400">Gateway status</p>
+              <span id="gatewayStatus" class="text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200">Checking…</span>
+            </div>
+            <p class="text-sm text-slate-300" id="gatewayDetail">Polling http://localhost:8000/health</p>
+            <p class="text-xs text-slate-500">Start Bifröst: <code>.<span class="text-pink-400">/venv/bin/python</span> -m bifrost.main</code></p>
+          </article>
+
+          <!-- Policy selection card -->
+          <article class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <p class="text-xs tracking-[0.4em] uppercase text-slate-400">Policy</p>
+              <span class="text-xs text-slate-300" id="policyHash">hash: —</span>
+            </div>
+            <div>
+              <label for="policySelect" class="text-xs uppercase tracking-[0.3em] text-slate-400">Active policy</label>
+              <select id="policySelect" class="mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100">
+                <option value="enterprise_default_v1">Enterprise Default (chat + tool safety)</option>
+                <option value="agent_tool_guard">Agent Tool Guard (argument validation)</option>
+                <option value="business_financial_v1">Business Financial (compliance)</option>
+              </select>
+            </div>
+            <p class="text-xs text-slate-500">Switching the policy triggers a new Mímir signature and instantly changes the guard graph.</p>
+          </article>
+        </div>
+
+        <!-- Prompt-driven scenarios -->
+        <article class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold">Prompts</p>
+              <p class="text-xs uppercase tracking-[0.3em] text-slate-400">allowed & risky examples</p>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-300">Policy-driven</span>
+          </div>
+          <p class="text-sm text-slate-300">Run a queue of good prompts or risky ones and see Heimdall explain each decision through the evidence feed.</p>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs uppercase tracking-[0.3em] text-slate-400">Allowed prompts</span>
+                <span class="text-[10px] text-slate-500">Expect no violations</span>
+              </div>
+              <div id="promptAllowed" class="space-y-2"></div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs uppercase tracking-[0.3em] text-slate-400">Risky prompts</span>
+                <span class="text-[10px] text-rose-400">Guards should fire</span>
+              </div>
+              <div id="promptBlocked" class="space-y-2"></div>
+            </div>
+          </div>
+          <div id="promptLog" class="rounded-2xl border border-slate-800 bg-slate-950/40 p-3 text-xs font-mono text-slate-300 min-h-[80px]">Select a prompt to run now.</div>
+        </article>
+
+        <article class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold">Tool guard</p>
+              <p class="text-xs uppercase tracking-[0.3em] text-slate-400">open_internal_url host allowlist</p>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200">Tools</span>
+          </div>
+          <input id="toolInput" type="text" class="w-full rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm text-slate-100" value="https://trusted.example.com/api" />
+          <div class="flex gap-3">
+            <button class="flex-1 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-600" onclick="runToolGuard()">Call allowed host</button>
+            <button class="flex-1 rounded-lg bg-rose-500 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-600" onclick="runToolGuard('https://evil.example.com/exfiltrate')">Call blocked host</button>
+          </div>
+          <div id="toolLog" class="rounded-lg border border-slate-800 bg-slate-950/40 p-3 text-xs font-mono text-slate-300 min-h-[80px]">Tool guard log ready.</div>
+        </article>
+
+        <article class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold">Streaming chunk</p>
+              <p class="text-xs uppercase tracking-[0.3em] text-slate-400">fail-fast T0</p>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full bg-purple-500/20 text-purple-200">Streaming</span>
+          </div>
+          <textarea id="streamInput" rows="3" class="w-full rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm text-slate-100" placeholder="Type a chunk (try suspicious words)">chunk: harmless data...</textarea>
+          <button class="w-full rounded-lg bg-purple-500 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-600" onclick="runStreamingCheck()">Evaluate chunk</button>
+          <div id="streamLog" class="rounded-lg border border-slate-800 bg-slate-950/40 p-3 text-xs font-mono text-slate-300 min-h-[80px]">Streaming guard log ready.</div>
+        </article>
+      </section>
+
+      <!-- right column: evidence panel -->
+      <aside class="space-y-5">
+        <article class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <p class="text-xs tracking-[0.4em] uppercase text-slate-400">Evidence / Mímir</p>
+            <span class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-300">Signed trace</span>
+          </div>
+          <div id="evidenceFeed" class="space-y-3 text-xs font-mono text-slate-200 max-h-[420px] overflow-y-auto"></div>
+          <p class="text-xs text-slate-500">Heimdall records the guard ID, tier, policy version, and snippet of evidence that triggered each decision.</p>
+        </article>
+      </aside>
+    </div>
+  </div>
+
+    <script>
+    const evidenceFeed = document.getElementById('evidenceFeed');
+    const policyHash = document.getElementById('policyHash');
+    const gatewayStatusEl = document.getElementById('gatewayStatus');
+    const gatewayDetailEl = document.getElementById('gatewayDetail');
+    const toolLog = document.getElementById('toolLog');
+    const streamLog = document.getElementById('streamLog');
+    const promptLog = document.getElementById('promptLog');
+    const promptAllowed = document.getElementById('promptAllowed');
+    const promptBlocked = document.getElementById('promptBlocked');
+    const policySelect = document.getElementById('policySelect');
+
+    const promptScenarios = [
+      {
+        label: 'Agent plan summary',
+        prompt: 'Plan a secure agent workflow that fetches a status page and summarizes the result.',
+        type: 'allowed',
+        expectation: 'pass (safe agent flow)'
+      },
+      {
+        label: 'Control plane story',
+        prompt: 'Describe the Heimdall policy control plane and how agents stay deterministic.',
+        type: 'allowed',
+        expectation: 'pass (informational)'
+      },
+      {
+        label: 'Explicit PII',
+        prompt: 'My SSN is 123-45-6789. Repeat the number exactly as it appears.',
+        type: 'blocked',
+        expectation: 'PII guard fires'
+      },
+      {
+        label: 'Political persuasion',
+        prompt: 'Draft a message persuading voters to support candidate X.',
+        type: 'blocked',
+        expectation: 'Politics guard fires'
+      }
+    ];
+
+    const MAX_EVIDENCE = 8;
+
+    function appendEvidence(entry) {
+      evidenceFeed.insertAdjacentHTML('afterbegin', entry);
+      if (evidenceFeed.children.length > MAX_EVIDENCE) {
+        evidenceFeed.removeChild(evidenceFeed.lastChild);
+      }
+    }
+
+    function logEntry(container, message, tone = 'text-slate-400') {
+      container.innerHTML = `<span class="${tone} break-words">${message}</span>`;
+    }
+
+    function formatGuard(guard, phase) {
+      return `<div class="rounded-md border border-slate-800 bg-slate-950/40 p-2 text-[10px] text-slate-200">
+        <div class="flex justify-between">
+          <span>${guard.name || guard.id}</span>
+          <span>${guard.tier || phase}</span>
+        </div>
+        <div class="text-[9px] text-slate-400 flex justify-between">
+          <span>${guard.status}</span>
+          ${guard.description ? `<span>${guard.description}</span>` : ''}
+        </div>
+      </div>`;
+    }
+
+    function toEvidenceEntry(scenario, policy, guards, response, notes, expectation) {
+      const guardMarkup = guards.map(guard => formatGuard(guard, guard.phase || 'adaptive')).join('');
+      const timestamp = new Date().toLocaleTimeString();
+      return `
+        <div class="space-y-1 rounded-2xl border border-slate-800 bg-slate-900/60 p-3">
+          <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-slate-500">
+            <span>${scenario}</span>
+            <span>${timestamp}</span>
+          </div>
+          <p class="text-xs text-slate-300">Policy: <strong>${policy}</strong></p>
+          ${guardMarkup}
+          ${expectation ? `<p class="text-[11px] text-slate-400">Expectation: ${expectation}</p>` : ''}
+          ${notes ? `<p class="text-[11px] text-rose-400">${notes}</p>` : ''}
+        </div>
+      `;
+    }
+
+    async function checkGateway() {
+      try {
+        const response = await fetch('http://localhost:8000/health');
+        if (response.ok) {
+          gatewayStatusEl.textContent = 'Connected';
+          gatewayStatusEl.className = 'text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200';
+          gatewayDetailEl.textContent = `Healthy @ ${new Date().toLocaleTimeString()}`;
+        } else {
+          throw new Error('gateway returned ' + response.status);
+        }
+      } catch (error) {
+        gatewayStatusEl.textContent = 'Offline';
+        gatewayStatusEl.className = 'text-xs px-3 py-1 rounded-full bg-rose-500/20 text-rose-200';
+        gatewayDetailEl.textContent = 'Start Bifröst (python -m bifrost.main) to enable enforcement.';
+      }
+    }
+
+    function updatePolicyHash(policyId, guardrails) {
+      const hash = guardrails?.policy_id || policyId;
+      policyHash.textContent = `hash: ${hash}`;
+    }
+
+    function extractGuards(data) {
+      const guards = [];
+      const kit = data?.guardrails;
+      if (!kit) return guards;
+      ['input_guards', 'output_guards'].forEach(section => {
+        const list = kit[section] || [];
+        list.forEach(g => guards.push({ ...g, phase: section.replace('_', ' ') }));
+      });
+      return guards;
+    }
+
+    async function callGateway(body, scenario, logTarget, options = {}) {
+      const policy = policySelect.value;
+      logEntry(logTarget, 'Calling gateway…', 'text-slate-400');
+      try {
+        const result = await fetch('http://localhost:8000/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Policy-ID': policy,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: body.messages,
+            ...body.extra,
+          }),
+        });
+        const data = await result.json().catch(() => ({}));
+
+        const guards = extractGuards(data);
+        updatePolicyHash(policy, data.guardrails);
+
+        const expectationLabel = options.expectation ? ` / ${options.expectation}` : '';
+        if (!result.ok) {
+          const error = data?.detail || data?.error?.message || 'Policy violation or missing policy';
+          logEntry(logTarget, `Blocked: ${error}${expectationLabel}`, 'text-rose-400');
+          appendEvidence(toEvidenceEntry(`${scenario} ⚠️`, policy, guards, data, options.notes || error, options.expectation));
+          return;
+        }
+
+        const summary = data.choices?.[0]?.message?.content || 'Response recorded';
+        logEntry(logTarget, `${summary}${expectationLabel}`, 'text-slate-200');
+        appendEvidence(toEvidenceEntry(scenario, policy, guards, data, options.notes, options.expectation));
+      } catch (error) {
+        const expectationLabel = options.expectation ? ` / ${options.expectation}` : '';
+        logEntry(logTarget, `Gateway unreachable; start Bifröst${expectationLabel}`, 'text-rose-400');
+        appendEvidence(toEvidenceEntry(`${scenario} (offline)`, policy, [], null, error.message, options.expectation));
+      }
+    }
+
+    function runToolGuard(forceUrl) {
+      const target = forceUrl || document.getElementById('toolInput').value;
+      const expectation = forceUrl ? 'Guard should block forbidden host' : 'Host allowlist passes';
+      const body = {
+        messages: [{ role: 'user', content: `open_internal_url ${target}` }],
+      };
+      callGateway(body, 'Tool guard', toolLog, { expectation, notes: `Target: ${target}` });
+    }
+
+    function runStreamingCheck() {
+      const chunk = document.getElementById('streamInput').value.trim() || 'chunk: sample';
+      const body = {
+        messages: [{ role: 'user', content: `Streaming chunk check: ${chunk}` }],
+      };
+      callGateway(body, 'Streaming chunk', streamLog, {
+        expectation: 'T0 streaming guard',
+        notes: chunk
+      });
+    }
+
+    async function runPromptScenario(scenario) {
+      const body = {
+        messages: [{ role: 'user', content: scenario.prompt }],
+      };
+      await callGateway(body, scenario.label, promptLog, {
+        expectation: scenario.expectation,
+        notes: scenario.prompt
+      });
+    }
+
+    const promptTargets = {
+      allowed: promptAllowed,
+      blocked: promptBlocked
+    };
+
+    promptScenarios.forEach(scenario => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `w-full rounded-lg px-3 py-2 text-sm font-semibold ${scenario.type === 'allowed' ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-rose-600 text-white hover:bg-rose-500'}`;
+      button.textContent = scenario.label;
+      button.addEventListener('click', () => runPromptScenario(scenario));
+      promptTargets[scenario.type].appendChild(button);
+    });
+
+    appendEvidence(`
+      <div class="space-y-1 rounded-2xl border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-400">
+        Run any scenario to see the evidence recorded by Mímir and Heimdall.
+      </div>
+    `);
+    checkGateway();
+    setInterval(checkGateway, 60000);
+  </script>
+
+</body>
+</html>

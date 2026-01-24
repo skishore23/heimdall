@@ -1,0 +1,35 @@
+# Heimdall Configuration
+#
+# This file is automatically discovered by the CLI in:
+# - Current directory
+# - Parent directories (searched upwards)
+#
+# You can also specify explicitly with: --config path/to/heimdall.yaml
+
+# Directory paths
+policies_dir: ./policies
+build_dir: ./build
+models_dir: ./models
+
+# Bifröst gateway URL (optional, for bifrost subcommands)
+bifrost_url: http://localhost:8080
+
+# Default values (optional)
+defaults:
+  policy: enterprise_default_v1
+  model: openai:gpt-4o
+
+# Mímir signing keys (optional, base64-encoded)
+# Generate with: heimdall policy keygen
+# mimir:
+#   signing_key: <base64-encoded-signing-key>
+#   verify_key: <base64-encoded-verify-key>
+
+# Timeouts (optional)
+# timeout: 30.0
+# guard_timeout: 0.2
+
+# Environment (optional)
+# env: production
+# tenant: default
+

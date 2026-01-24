@@ -1,0 +1,56 @@
+policy_id: business_financial_v1
+description: Business policy for financial services with compliance, competitor protection, and professional liability guards
+
+guards:
+  # Input guards - applied to user messages
+  - id: pii.redact
+    target: messages[*].content
+    with: 
+      types: ["EMAIL", "PHONE", "CREDIT_CARD", "SSN"]
+      mode: "mask"
+
+  - id: toxicity.block
+    target: messages[*].content
+    with:
+      categories: ["profanity", "harassment", "threats"]
+      threshold: 0.1
+
+  # Financial compliance - block direct financial advice requests in input
+  - id: business.financial_compliance
+    target: messages[*].content
+    with:
+      company_profile:
+        industry: "financial_services"
+        compliance_level: "strict"
+      require_disclaimers: true
+      block_guarantees: true
+      severity: "critical"
+
+  # Competitor protection - block competitor mentions
+  - id: business.competitor_protection
+    target: output
+    with:
+      competitors: ["Vanguard", "Fidelity", "Charles Schwab", "E*TRADE", "TD Ameritrade", "Robinhood", "Wealthfront", "Betterment"]
+      block_recommendations: true
+      severity: "high"
+
+  # Professional liability protection
+  - id: business.professional_liability
+    target: output
+    with:
+      blocked_advice_types: ["legal", "medical", "tax", "accounting"]
+      severity: "critical"
+
+  # Brand tone enforcement
+  - id: business.brand_tone
+    target: output
+    with:
+      unprofessional_patterns: ["\\b(?:dude|bro|yo|hey there|sup)\\b", "\\b(?:awesome|sick|lit|fire|dope)\\b", "\\b(?:lol|lmao|rofl|omg|wtf)\\b"]
+      required_tone: "professional"
+      severity: "med"
+
+# Composition - define guard execution for each phase
+compose:
+  input: allOf(pii_redact, toxicity_block, business_financial_compliance)
+  output: allOf(business_competitor_protection, business_professional_liability, business_brand_tone)
+  root: allOf(pii_redact, toxicity_block, business_financial_compliance, business_competitor_protection, business_professional_liability, business_brand_tone)

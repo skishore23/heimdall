@@ -1,0 +1,57 @@
+policy_id: enterprise_default_v1
+description: Default enterprise policy with PII redaction, politics blocking, and schema validation
+
+guards:
+  # Input guards - applied to messages
+  - id: pii.redact
+    target: messages[*].content
+    with: 
+      types: ["EMAIL", "PHONE", "CREDIT_CARD", "SSN"]
+      mode: "mask"
+
+  - id: toxicity.block
+    target: messages[*].content
+    with:
+      categories: ["profanity", "harassment", "threats"]
+      threshold: 0.1
+
+  # Politics blocking for input messages
+  - id: politics.block
+    target: messages[*].content
+    with:
+      patterns_strong: 
+        - "vote for"
+        - "who should i vote"
+        - "election"
+        - "candidate"
+        - "manifesto"
+        - "campaign"
+      patterns_weak:
+        - "tax plan"
+        - "senator"
+        - "government"
+        - "voting"
+        - "political"
+      allow:
+        - "what is a constitution"
+        - "how does a bill become law"
+        - "civics education"
+      threshold: 0.35
+
+  # Schema validation only applies when JSON output is specifically requested
+  # Commented out for normal chat - uncomment when using structured output
+  # - id: schema.validate.structure
+  #   target: output.json
+  #   with:
+  #     required_fields: []
+  #     allowed_fields: ["text", "json", "metadata"]
+  #     field_types:
+  #       text: "str"
+  #       json: "dict"
+  #       metadata: "dict"
+
+# Composition - separate input and output phases
+compose:
+  input: allOf(pii_redact, politics_block, toxicity_block)
+  output: allOf(pii_redact, politics_block, toxicity_block)
+  root: allOf(pii_redact, politics_block, toxicity_block)

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+      - DEFAULT_POLICY_ID=enterprise_default_v1
+    depends_on:
+      - redis
+    volumes:
+      - ../../policies:/app/policies:ro
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  mcp-proxy:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    ports:
+      - "9000:9000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=9000
+    volumes:
+      - ../../policies:/app/policies:ro
+    command: ["uv", "run", "mcp_proxy.main:main", "--upstream", "http://upstream-mcp:8080", "--policy", "policies/enterprise_default_v1.yaml"]
+    restart: unless-stopped
+
+volumes:
+  redis_data:

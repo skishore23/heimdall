@@ -1,0 +1,51 @@
+# Guardrails ONNX with CUDA support
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+LABEL org.opencontainers.image.title="Guardrails Gateway (ONNX+CUDA)"
+LABEL org.opencontainers.image.description="Guardrails with ONNX Runtime GPU support"
+LABEL org.opencontainers.image.version="0.9.0"
+
+WORKDIR /app
+
+# Install Python and dependencies
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install with ONNX GPU support
+RUN uv pip install --system onnxruntime-gpu && \
+    uv pip install --system -e ".[onnx]"
+
+# Copy application code
+COPY heimdall/ ./heimdall/
+COPY bifrost/ ./bifrost/
+COPY guards/ ./guards/
+COPY streaming_proxy/ ./streaming_proxy/
+COPY mcp_proxy/ ./mcp_proxy/
+COPY heimdall_sdk/ ./heimdall_sdk/
+COPY policies/ ./policies/
+COPY models/ ./models/
+
+# Create non-root user
+RUN useradd -m -u 1000 guardrails && \
+    chown -R guardrails:guardrails /app
+
+USER guardrails
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/healthz || exit 1
+
+EXPOSE 8000
+
+CMD ["python3", "-m", "bifrost.main"]
+

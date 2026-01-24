@@ -1,0 +1,255 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "heimdall"
+version = "0.9.0"
+description = "Heimdall - Composable guard algebra for LLM applications with three-tier execution (T0/T1/T2)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    {name = "Heimdall Team"},
+]
+keywords = ["ai", "guardrails", "safety", "llm", "gateway", "proxy", "heimdall", "ml-safety"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Core guard engine dependencies only
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.0.0",
+    "pyyaml>=6.0.1",
+    "jsonpath-ng[ext]>=1.6.0",
+    "jsonschema>=4.20.0",
+    "regex>=2023.0.0",
+    # Cryptography for signed policies (Mímir)
+    "PyNaCl>=1.5.0",
+    # OpenTelemetry for tracing
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    # Property testing
+    "hypothesis>=6.90.0",
+    "openai>=2.3.0",
+    "python-dotenv>=1.1.1",
+]
+
+[project.optional-dependencies]
+# CLI tools (Rich output, JSON support)
+cli = [
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "textual>=0.58.0",
+    "httpx[http2]>=0.25.0",
+]
+# ONNX support for T2 guards
+onnx = [
+    "onnxruntime>=1.16.0",
+    "tokenizers>=0.15.0",
+]
+# Bifröst gateway (includes ONNX support for T2 guards)
+gateway = [
+    "openai>=1.0.0",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "httpx[http2]>=0.25.0",
+    "redis>=5.0.0",
+    "structlog>=23.2.0",
+    "opentelemetry-instrumentation-fastapi>=0.41b0",
+    "tokenizers>=0.15.0",
+    "onnxruntime>=1.16.0",
+]
+# Development tools
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.9.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+]
+# All extras
+all = [
+    "openai>=1.0.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "textual>=0.58.0",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "httpx[http2]>=0.25.0",
+    "redis>=5.0.0",
+    "structlog>=23.2.0",
+    "opentelemetry-instrumentation-fastapi>=0.41b0",
+    "tokenizers>=0.15.0",
+    "onnxruntime>=1.16.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+heimdall = "heimdall_cli.app:main"
+heimdall-gateway = "bifrost.main:main"
+heimdall-mcp-proxy = "mcp_proxy.main:main"
+
+[project.urls]
+Homepage = "https://github.com/heimdall-ai/heimdall"
+Documentation = "https://docs.heimdall.ai"
+Repository = "https://github.com/heimdall-ai/heimdall.git"
+Issues = "https://github.com/heimdall-ai/heimdall/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "bifrost",
+    "heimdall",
+    "heimdall_sdk",
+    "heimdall_cli",
+    "guards",
+    "mcp_proxy",
+    "streaming_proxy",
+    "policies",
+]
+include = [
+    "py.typed",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "B904",  # raise from within except - stylistic preference
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403", "F405", "F811"]
+"tests/**/*.py" = ["F401"]
+"scripts/**/*.py" = ["F401"]
+"guards/**/__init__.py" = ["F401", "F403", "F405"]
+"guards/politics/guards.py" = ["E402"]
+"heimdall/__init__.py" = ["F401", "F403", "F405", "F811"]
+"heimdall/optics.py" = ["E402"]
+"heimdall/policy_schema.py" = ["B007"]
+"heimdall/types.py" = ["UP007"]
+"heimdall_sdk/core.py" = ["F401", "F403", "F405"]
+
+[tool.mypy]
+python_version = "3.11"
+check_untyped_defs = false
+disallow_any_generics = false
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+warn_return_any = false
+strict_equality = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "redis.*",
+    "pyre2.*",
+    "jsonpath_ng.*",
+    "onnxruntime.*",
+    "torch.*",
+    "transformers.*",
+    "tests.*",
+    "scripts.*",
+    "heimdall.*",
+    "bifrost.*",
+    "guards.*",
+    "heimdall_sdk.*",
+    "heimdall_cli.*",
+    "mcp_proxy.*",
+    "streaming_proxy.*",
+    "examples.*",
+]
+ignore_missing_imports = true
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=bifrost",
+    "--cov=heimdall",
+    "--cov=heimdall_sdk",
+    "--cov=guards",
+    "--cov=mcp_proxy",
+    "--cov=streaming_proxy",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["bifrost", "heimdall", "heimdall_sdk", "guards", "mcp_proxy", "streaming_proxy"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

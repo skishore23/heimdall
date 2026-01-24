@@ -1,0 +1,7 @@
+policy_id: noop_v1
+description: No-operation policy (passes everything)
+
+guards: []
+
+compose:
+  root: seq()

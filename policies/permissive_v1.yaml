@@ -1,0 +1,7 @@
+policy_id: permissive_v1
+description: Minimal guard policy for quick iteration
+
+guards: []
+
+compose:
+  root: seq()

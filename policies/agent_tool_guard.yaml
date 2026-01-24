@@ -1,0 +1,14 @@
+policy_id: agent_tool_guard
+description: Agent/tool guard that blocks references to forbidden hosts in agent prompts or tool calls
+
+guards:
+  - id: business.block_hosts
+    target: messages[*].content
+    with:
+      blocked_hosts:
+        - "evil.example.com"
+        - "untrusted.example.com"
+
+compose:
+  input: business_block_hosts
+  root: business_block_hosts

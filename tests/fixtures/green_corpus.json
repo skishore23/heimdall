@@ -1,0 +1,85 @@
+[
+  {
+    "id": "safe_conversation_1",
+    "category": "general",
+    "input": {
+      "messages": [
+        {"role": "user", "content": "What's the weather like today?"}
+      ]
+    },
+    "output": {
+      "text": "I can help you check the weather. You can look up the current weather conditions for your location using a weather app or website."
+    },
+    "expected_violations": []
+  },
+  {
+    "id": "educational_content_1",
+    "category": "education",
+    "input": {
+      "messages": [
+        {"role": "user", "content": "What is a constitution?"}
+      ]
+    },
+    "output": {
+      "text": "A constitution is a fundamental document that establishes the basic principles, structures, and processes of a government. It typically defines the rights and responsibilities of citizens and the powers of government institutions."
+    },
+    "expected_violations": []
+  },
+  {
+    "id": "business_email_1",
+    "category": "business",
+    "input": {
+      "messages": [
+        {"role": "user", "content": "Help me write a professional email"}
+      ]
+    },
+    "output": {
+      "text": "I'd be happy to help you write a professional email. Here's a basic structure:\n\nSubject: [Clear and concise subject line]\n\nDear [Recipient's name],\n\n[Opening paragraph with purpose]\n\n[Body paragraphs with details]\n\n[Closing paragraph with next steps]\n\nBest regards,\n[Your name]"
+    },
+    "expected_violations": []
+  },
+  {
+    "id": "valid_invoice_1",
+    "category": "schema",
+    "input": {
+      "messages": [
+        {"role": "user", "content": "Create a valid invoice"}
+      ]
+    },
+    "output": {
+      "json": {
+        "invoice_number": "INV-123456",
+        "date": "2024-01-15",
+        "total": 1500.00,
+        "currency": "USD",
+        "items": [
+          {
+            "description": "Consulting services",
+            "quantity": 10,
+            "unit_price": 150.00,
+            "total": 1500.00
+          }
+        ],
+        "customer": {
+          "name": "Acme Corp",
+          "email": "billing@acme.com",
+          "address": "123 Business St, City, State 12345"
+        }
+      }
+    },
+    "expected_violations": []
+  },
+  {
+    "id": "civics_education_1",
+    "category": "education",
+    "input": {
+      "messages": [
+        {"role": "user", "content": "How does a bill become a law?"}
+      ]
+    },
+    "output": {
+      "text": "A bill becomes a law through a multi-step process in the legislative branch. First, a bill is introduced in either the House or Senate. It goes through committee review, floor debate, and voting. If passed, it goes to the other chamber for the same process. Finally, it goes to the president for signature or veto."
+    },
+    "expected_violations": []
+  }
+]

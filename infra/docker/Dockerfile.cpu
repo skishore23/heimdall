@@ -1,0 +1,50 @@
+# Guardrails CPU-only image
+FROM python:3.11-slim
+
+LABEL org.opencontainers.image.title="Guardrails Gateway"
+LABEL org.opencontainers.image.description="Composable Guard Algebra with OpenAI-compatible gateway"
+LABEL org.opencontainers.image.version="0.9.0"
+LABEL org.opencontainers.image.authors="Guardrails Team"
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast dependency management
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install Python dependencies
+RUN uv pip install --system -e .
+
+# Copy application code
+COPY heimdall/ ./heimdall/
+COPY bifrost/ ./bifrost/
+COPY guards/ ./guards/
+COPY streaming_proxy/ ./streaming_proxy/
+COPY mcp_proxy/ ./mcp_proxy/
+COPY heimdall_sdk/ ./heimdall_sdk/
+COPY policies/ ./policies/
+
+# Create non-root user
+RUN useradd -m -u 1000 guardrails && \
+    chown -R guardrails:guardrails /app
+
+USER guardrails
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/healthz || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run gateway
+CMD ["python", "-m", "bifrost.main"]
+

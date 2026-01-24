@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Skill(wink:verify)",
+      "Bash(bun:*)",
+      "Bash(ruff check:*)",
+      "Bash(mypy:*)",
+      "Bash(pytest:*)",
+      "Bash(bandit:*)",
+      "Bash(echo:*)"
+    ]
+  }
+}
