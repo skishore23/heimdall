@@ -251,7 +251,7 @@ def _is_safe_expression(expr: str, allowed_names: set[str]) -> bool:
                 # Check if the name is allowed
                 if node.id not in allowed_names:
                     return False
-            elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            elif isinstance(node, ast.Import | ast.ImportFrom):
                 # No imports allowed
                 return False
             elif isinstance(node, ast.Attribute):
@@ -265,10 +265,10 @@ def _is_safe_expression(expr: str, allowed_names: set[str]) -> bool:
                 else:
                     # Complex function calls not allowed
                     return False
-            elif isinstance(node, (ast.Lambda, ast.FunctionDef, ast.AsyncFunctionDef)):
+            elif isinstance(node, ast.Lambda | ast.FunctionDef | ast.AsyncFunctionDef):
                 # No function definitions
                 return False
-            elif isinstance(node, (ast.ListComp, ast.DictComp, ast.SetComp, ast.GeneratorExp)):
+            elif isinstance(node, ast.ListComp | ast.DictComp | ast.SetComp | ast.GeneratorExp):
                 # No comprehensions (could be used for side effects)
                 return False
             # Note: ast.Exec and ast.Eval were removed in Python 3.8+

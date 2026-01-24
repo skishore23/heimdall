@@ -232,7 +232,7 @@ def validate_composition_expression(expr: str, allowed_names: set[str]) -> None:
                     f"Allowed names: {sorted(allowed_names)}"
                 )
 
-        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+        elif isinstance(node, ast.Import | ast.ImportFrom):
             raise ValueError("Import statements not allowed in compositions")
 
         elif isinstance(node, ast.Attribute):
@@ -252,13 +252,13 @@ def validate_composition_expression(expr: str, allowed_names: set[str]) -> None:
             if func_name not in allowed_names:
                 raise ValueError(f"Unknown function '{func_name}' in composition")
 
-        elif isinstance(node, (ast.Lambda, ast.FunctionDef, ast.AsyncFunctionDef)):
+        elif isinstance(node, ast.Lambda | ast.FunctionDef | ast.AsyncFunctionDef):
             raise ValueError("Function definitions not allowed in compositions")
 
-        elif isinstance(node, (ast.ListComp, ast.DictComp, ast.SetComp, ast.GeneratorExp)):
+        elif isinstance(node, ast.ListComp | ast.DictComp | ast.SetComp | ast.GeneratorExp):
             raise ValueError("Comprehensions not allowed in compositions")
 
-        elif isinstance(node, (ast.Try, ast.ExceptHandler, ast.With)):
+        elif isinstance(node, ast.Try | ast.ExceptHandler | ast.With):
             raise ValueError("Control flow statements not allowed in compositions")
 
 

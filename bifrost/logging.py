@@ -90,7 +90,7 @@ class RequestLogger:
 
         # Add body size (not content for privacy)
         if body is not None:
-            if isinstance(body, (dict, list)):
+            if isinstance(body, dict | list):
                 import json
                 body_str = json.dumps(body)
                 log_data["body_size"] = len(body_str)

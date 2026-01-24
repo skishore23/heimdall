@@ -10,20 +10,19 @@ import argparse
 import asyncio
 import statistics
 import time
-from typing import Any, Dict
+from typing import Any
 
 import httpx
-
 
 DEFAULT_URL = "http://localhost:8000/v1/chat/completions"
 
 
 async def _send_request(
     client: httpx.AsyncClient,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     policy_id: str,
     results: list[float],
-    guard_rows: list[Dict[str, Any]]
+    guard_rows: list[dict[str, Any]],
 ):
     start = time.perf_counter()
     response = await client.post(payload["url"], json=payload["body"])
@@ -52,7 +51,7 @@ async def run_benchmark(
     model: str,
     requests: int,
     concurrency: int,
-    messages: list[Dict[str, str]]
+    messages: list[dict[str, str]],
 ):
     payload = {
         "url": url,
@@ -69,7 +68,7 @@ async def run_benchmark(
     }
 
     results: list[float] = []
-    guard_rows: list[Dict[str, Any]] = []
+    guard_rows: list[dict[str, Any]] = []
     sem = asyncio.Semaphore(concurrency)
 
     async with httpx.AsyncClient(timeout=30.0, headers=headers) as client:
@@ -94,13 +93,13 @@ def summarize(latencies: list[float]) -> None:
         print(f"  p{pct}: {latencies_sorted[idx]:.2f}")
 
 
-def print_guard_summary(rows: list[Dict[str, Any]]) -> None:
+def print_guard_summary(rows: list[dict[str, Any]]) -> None:
     if not rows:
         return
     guards_seen = sum(row["input_guards"] + row["output_guards"] for row in rows)
     print(f"\nGuard metadata sampled ({len(rows)} requests):")
     print(f"  Total guards executed: {guards_seen}")
-    tier_freq: Dict[str, int] = {}
+    tier_freq: dict[str, int] = {}
     for row in rows:
         for tier in row["tier_stats"].keys():
             tier_freq[tier] = tier_freq.get(tier, 0) + 1

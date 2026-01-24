@@ -877,8 +877,13 @@ prevent_leak = flow_guard(
 
 ## Advanced Topics
 
-For composition laws, mathematical foundations, and property-based testing, see the [Advanced Composition Guide](archive/GUARD_AUTHORING_ADVANCED.md).
+- **Composition laws** keep `seq`, `allOf`, `anyOf`, and `kOf` predictable: identity means “do nothing”, associativity means grouping doesn’t change results, and short-circuiting stops once a guard violation fires.
+- **Natural transformations (`heimdall.natural`)** are plain-language helpers that adjust metadata (tiers, permissive vs. blocking, timeouts, retries) without rewriting the guard logic. Use them to log instead of block, promote a guard to a higher tier, or add circuit-breaker behavior.
+- **Kleisli composition (`heimdall.kleisli`)** threads the success context from one guard into the next. Each guard either produces a violation (Left) or passes a context to the following guard, so the whole pipeline stays pure and testable.
+- **Property-based testing** lives under `tests/property/`. Define invariants (e.g., “tool guards always include host evidence” or “guards don’t mutate unrelated context fields”) and let Hypothesis generate dozens of cases to prove them.
+
+Run `pytest tests/property` and read the docstrings in `heimdall.comb`, `heimdall.kleisli`, and `heimdall.natural` to see these advanced abstractions in action. Follow [Advanced Guard Authoring](docs/GUARD_AUTHORING_ADVANCED.md) for real-world YAML patterns, policy breakdowns, and deployment-ready explanations.
 
 ---
 
-**Ready to build guards?** Start with `G()` for simple guards, or use the full algebra for sophisticated compositions.
+**Ready to build guards?** Start with `G()` for simple guards, or keep crafting composer graphs with the combinators, lenses, and tier helpers described above. The demo and control plane already show how those pieces fit together.
