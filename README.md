@@ -111,7 +111,7 @@ OpenTelemetry spans, profiler metrics, SSE trace streaming, and policy signing l
 
 ## Getting started
 
-1. **Set your secrets (no placeholders).** Create `.env` or export: `OPENAI_API_KEY`, `UPSTREAM_BASE_URL` (if using a custom target), `DEFAULT_POLICY_ID` (e.g., `enterprise_default_v1`).
+1. **Update env** Create `.env` or export: `OPENAI_API_KEY`, `UPSTREAM_BASE_URL` (if using a custom target), `DEFAULT_POLICY_ID` (e.g., `enterprise_default_v1`).
 2. **Start Redis** (optional) and Bifröst: `./.venv/bin/python -m bifrost.main` (or `python -m bifrost.main` if your shell already uses the illustrated virtual environment). The gateway logs policy loads and guard metadata on every request.
 3. **Point clients to the gateway.** Set `base_url=http://localhost:8000/v1` and the header `x-policy-id` to the policy you signed via Mímir.
 4. **Explore the demo.** `demo/demo.html` shows agent/tool flows, evidence for each guard, and the signed policy hash recorded by Mímir.
